@@ -1,10 +1,14 @@
 const express = require('express')
 const router = express.Router()
+const listUsers = require('../controllers/Users')
 
-router.get('/', (req, res) => {
-    res.json({msg: 'users'})
-})
+//router.get('/', listUsers);
+//router.post('/', listUsers);
+//router.put('/', listUsers);
+//router.patch('/', listUsers);
+//router.delete('/', listUsers);
+
 
 module.exports = router
-// http:localhost:3000/     api/v1/ users
+// http:localhost:3000/api/v1/users
 // api "aplicación de interfaz programable"
