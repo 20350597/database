@@ -5,6 +5,14 @@ const usersModel = {
         FROM
             Users    
     `,
+    getByID:`
+    SELECT
+         *
+    FROM
+         USERS
+    WHERE
+         id = ?
+    `,
 }
 
 module.exports = usersModel

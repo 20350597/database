@@ -26,4 +26,30 @@ const pool = require('../db');
       }
     }
 
-    module.exports = listUsers
+
+    const listUserByID = async (req = request, res = response) => {
+      const {id} = req.params;
+      let conn;
+
+      try{
+        conn = await pool.getConnection();
+
+        const user = await conn.query(usersModel.getByID, [id], (err)=>{
+          if (err){
+            throw err;
+          }
+        })
+
+        res.json(user)
+
+      }catch (error) {
+        console.log(error);
+        res.status(500).json(error);  //función del endpoint
+
+      } finally{
+        if(conn){
+          conn.end();} //utileria que nos da acceso a un archivo de configuración de entorno
+      }
+    }
+
+    module.exports = {listUsers, listUserByID}
