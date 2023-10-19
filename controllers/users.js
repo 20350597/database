@@ -85,19 +85,19 @@ const pool = require('../db');
       try{
         conn = await pool.getConnection();
 
-        const [userExists] = await conn.query(userModel.getByUsername, [username], (err) =>{
+        const [usernameExists] = await conn.query(usersModel.getByUsername, [username], (err) =>{
           if (err) throw err;
         })
-        if (usernameExist){
-          res.status(409).json({msg: 'Username ${username} already exists'})
+        if (usernameExists){
+          res.status(409).json({msg: `Username ${username} already exists`})
           return;
         }
 
-        const [emailExists] = await conn.query(userModel.getByEmail, [username], (err) =>{
+        const [emailExists] = await conn.query(usersModel.getByEmail, [username], (err) =>{
           if (err) throw err;
         })
-        if (emailExist){
-          res.status(409).json({msg: 'Username ${email} already exists'})
+        if (emailExists){
+          res.status(409).json({msg: `Username ${email} already exists`})
           return;
         }
 
@@ -106,11 +106,11 @@ const pool = require('../db');
         })
 
         if (userAdded.affectedWows = 0){
-          throw new Error('user not added')
+          throw new Error('user not added');
         }
 
         ;
-        res.json(userAdded);
+        res.json('User successfully added');
       }catch(error){
         console.log(error);
         res.status(500).json(error);
@@ -118,7 +118,42 @@ const pool = require('../db');
         if (conn) conn.end();
       }
     }
-    module.exports = {listUsers, listUserByID, addUser}
+
+    const deleteUser = async (req = request, res = response)=>{
+      let conn;
+      const {id} = req.params;                        //Lamar ID
+
+      try{
+        conn = await pool.getConnection();
+
+        const userExist = await conn.query(usersModel.getByID, [id], (err) =>{
+          if (err) throw err;
+
+        }); 
+        if (!userExist || userExist.is_active == 0){
+          res.status(404).json({msg: `User with ID ${id} not found`});
+          return;
+        }
+
+        const userDeleted = await conn.query(
+        usersModel.deleteRow, [id], (err) => {
+          if (err) throw err;
+        }
+        );
+        if (userDeleted.affectedRows == 0){
+          throw new Error ('User not deleted');
+        }
+        res.json({msg: 'User deleted succesfuly'});
+
+      }catch (error){ 
+        console.log(error);
+        res.status(500).json(error)
+      } finally{
+        if (conn) conn.end();
+      }
+    }
+
+    module.exports = {listUsers, listUserByID, addUser, deleteUser}
 
 
     //  routes     -     controllers       -     models(BD)

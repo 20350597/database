@@ -21,6 +21,14 @@ const usersModel = {
     WHERE
          email = ?
     `,
+    getByUsername: `
+    SELECT
+    *
+    FROM
+        Users
+    WHERE
+        username = ?
+    `,
     addRow:`
     INSERT INTO
         Users (
@@ -35,6 +43,17 @@ const usersModel = {
         ) VALUES (
             ?,?,?,?,?,?,?,?
         )
+        `,
+        updateRow: `
+        Pendiente
+        `,
+        deleteRow:`
+        Update
+            Users
+        SET
+            is_active=0
+        Where
+            id = ?
         `,
 }
 
