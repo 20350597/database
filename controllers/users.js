@@ -102,60 +102,99 @@ const addUser = async (req = request, res = response) => {
 }
 
 const updateUser = async (req = request, res = response) => {
-  const { id } = req.params;
-  const { name, email } = req.body;
-
-  if (isNaN(id)) {
-    res.status(400).json({ msg: `The ID ${id} is invalid` });
-    return;
-  }
-
   let conn;
 
+  const {
+      username,
+      password,
+      email,
+      name,
+      lastname,
+      phonenumber,
+      role_id,
+      is_active
+  } = req.body;
+
+  const { id } = req.params;
+
+  let userNewData = [
+      username,
+      password,
+      email,
+      name,
+      lastname,
+      phonenumber,
+      role_id,
+      is_active
+  ];
+
   try {
-    conn = await pool.getConnection();
-    const [user] = await conn.query(usersModel.getByID, [id]);
+      conn = await pool.getConnection();
 
-    if (!user) {
-      res.status(404).json({ msg: `User with ID ${id} not found` });
+const [userExists] = await conn.query
+(usersModel.getByID, 
+  [id], 
+  (err) => {
+  if (err) throw err;
+});
+
+if (!userExists || userExists.is_active ===0){
+  res.status(409).json({msg: `User with ID ${id} not found`});
+       return;
+}
+
+const [usernameExists] = await conn.query(usersModel.getByUsername, [username], (err) => {
+  if (err) throw err;
+  })
+  if (usernameExists) {
+      res.status(409).json({msg: `Username ${username} already exists`});
       return;
-    }
+     }
 
-    const [nameExists, emailExists] = await Promise.all([
-      conn.query(usersModel.checkNameExists, [name, id]),
-      conn.query(usersModel.checkEmailExists, [email, id]),
-    ]);
+const [emailExists] = await conn.query(usersModel.getByEmail, [email], (err) => {
+    if (err) throw err;
+   })
+    if (emailExists) {
+        res.status(409).json({msg: `Email ${email} already exists`});
+       return;
+         }
 
-    if (nameExists && Array.isArray(nameExists) && nameExists.length > 0) {
-      res.status(409).json({ msg: `Name ${name} already exists for another user` });
-      return;
-    }
+      const userOldData = [
+      userExists.username,
+      userExists.password,
+      userExists.email,
+      userExists.name,
+      userExists.lastname,
+      userExists.phonenumber,
+      userExists.role_id,
+      userExists.is_active     
+    ];
 
-    if (emailExists && Array.isArray(emailExists) && emailExists.length > 0) {
-      res.status(409).json({ msg: `Email ${email} already exists for another user` });
-      return;
-    }
+    userNewData.forEach((userData, index) =>{
+      if (!userData){
+          userNewData[index] = userOldData[index];
+      }
+    })
+         const userUpdated = await conn.query(
+          usersModel.updateRow,
+          [...userNewData, id],
+          (err) =>{
+              if (err) throw err;
+          }
+         )
 
-    const updateData = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
+if (userUpdated.affecteRows === 0){
+ throw new Error('User not added')
+      } 
 
-
-
-    const updateResult = await conn.query(usersModel.updateUser, [updateData.name, updateData.email, updateData.username, updateData.password, updateData.lastname,updateData.phonenumber, id]);
-
-    if (updateResult.affectedRows === 0) {
-      throw new Error('User not updated');
-    }
-
-    res.json({ msg: `User with ID ${id} updated successfully` });
+      res.json({msg: 'USER ADDED SECCESFULLY'});
+      
   } catch (error) {
-    console.log(error);
-    res.status(500).json(error);
+      console.log(error);
+      res.status(500).json(error);
+      return;
   } finally {
-    if (conn) {
-      conn.end();
-    }
+      if (conn) conn.end();
   }
 }
 
@@ -188,6 +227,7 @@ const deleteUser = async (req = request, res = response) => {
     }
   }
 }
+
 
 module.exports = { listUsers, listUserByID, addUser, deleteUser, updateUser };
 

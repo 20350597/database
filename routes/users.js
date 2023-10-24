@@ -8,7 +8,7 @@ router.get('/:id', listUserByID); //  http:localhost:3000/api/v1/users/?   //obt
 router.put('/', addUser)  
 router.patch('/:id', updateUser);
 router.delete('/:id', deleteUser);
-//router.patch('/', listUsers);   //modifica
+
 
 
 module.exports = router
