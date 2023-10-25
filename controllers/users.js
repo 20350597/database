@@ -1,4 +1,5 @@
 const { request, response } = require('express');
+const bcrypt = require('bcrypt');
 const usersModel = require('../models/users');
 const pool = require('../db');
 
@@ -83,8 +84,10 @@ const addUser = async (req = request, res = response) => {
       res.status(409).json({ msg: `Email ${email} already exists` });
       return;
     }
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const userAdded = await conn.query(usersModel.addRow, [username, password, email, name, lastname, phonenumber, role_id, is_active]);
+    const userAdded = await conn.query(usersModel.addRow, [username, passwordHash, email, name, lastname, phonenumber, role_id, is_active]);
 
     if (userAdded.affectedWows = 0) {
       throw new Error('User not added');
@@ -117,9 +120,15 @@ const updateUser = async (req = request, res = response) => {
 
   const { id } = req.params;
 
+  let passwordHash;
+  if (password){
+    const saltRounds = 10;
+    passwordHash = await bcrypt.hash(password, saltRounds);
+  }
+
   let userNewData = [
       username,
-      password,
+      passwordHash,
       email,
       name,
       lastname,
