@@ -119,6 +119,10 @@ const updateUser = async (req = request, res = response) => {
   } = req.body;
 
   const { id } = req.params;
+  if (isNaN(id)) {
+    res.status(400).json({ msg: `The ID ${id} is invalid` });
+    return;
+  }
 
   let passwordHash;
   if (password){
@@ -211,6 +215,11 @@ const deleteUser = async (req = request, res = response) => {
   let conn;
   const { id } = req.params;
 
+  if (isNaN(id)) {
+    res.status(400).json({ msg: `The ID ${id} is invalid` });
+    return;
+  }
+
   try {
     conn = await pool.getConnection();
     const userExist = await conn.query(usersModel.getByID, [id]);
@@ -237,9 +246,55 @@ const deleteUser = async (req = request, res = response) => {
   }
 }
 
+const signInUser = async (req = request, res = response) => {
+  let conn;
 
-module.exports = { listUsers, listUserByID, addUser, deleteUser, updateUser };
+  const {username,password} = req.body; //body es para datos importantes
+
+  try{
+    conn = await pool.getConnection();
+
+    if(!username || !password){
+      res.status(400).json({msg: 'You must send Username and Password'});
+      return;
+    }
+  
+    const [user] = await conn.query(usersModel.getByUsername, [username], (err) => {
+    if (err)
+      throw err;
+    }
+    );
+  
+    if (!user){
+      res.status(404).json({msg: 'Wrong username or password'});
+    }
+  
+    const passwordOk = await bcrypt.compare(password, user.password);
+  
+    if(!passwordOk){
+      res.status(404).json({msg: 'Wrong username or password'});
+      return;
+    }
+
+    delete(user.password);
+    delete(user.created_at);
+    delete(user.updated_at);
+
+  }catch (error){
+    console.log(error);
+    res.status(500).json(error);
+  }finally{
+    if(conn) conn.end();
+  }
+}
 
 
+module.exports = { 
+  listUsers,
+  listUserByID, 
+  addUser, 
+  deleteUser, 
+  updateUser,
+  signInUser };
 
-    //  routes     -     controllers       -     models(BD)
+ //  routes     -     controllers       -     models(BD)
